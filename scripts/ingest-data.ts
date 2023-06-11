@@ -26,18 +26,17 @@ export const run = async () => {
     /*create and store the embeddings in the vectorStore*/
     const embeddings = new OpenAIEmbeddings();
 
-    const index = pinecone.Index(PINECONE_INDEX_NAME); //change to your own index name
+    const pineconeArgs = {
+      pineconeIndex: pinecone.Index(PINECONE_INDEX_NAME),
+      namespace: PINECONE_NAME_SPACE,
+    };
 
-    for (const doc in docs) {
+    const promises = docs.map(async (doc) => {
       console.log('ingesting doc', doc);
-      await PineconeStore.fromDocuments(
-        index,
-        [docs[doc]],
-        embeddings,
-        'text',
-        PINECONE_NAME_SPACE, //optional namespace for your vectors
-      );
-    }
+      await PineconeStore.fromDocuments([doc], embeddings, pineconeArgs);
+    });
+
+    await Promise.all(promises);
   } catch (error) {
     console.log('error', error);
     throw new Error('Failed to ingest your data');
